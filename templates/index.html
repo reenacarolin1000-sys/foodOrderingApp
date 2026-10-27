@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodieHub | Online Food Ordering</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="hero">
+    <div class="brand">🍽️ FoodieHub</div>
+    <h1>Online Food Ordering System</h1>
+    <p>Manage your menu, serve your customers, and track every order.</p>
+</header>
+
+<main class="container">
+
+    <!-- CREATE: Add food -->
+    <section class="panel">
+        <h2>➕ Add a New Dish</h2>
+        <form action="{{ url_for('add_food') }}" method="POST"
+              class="form-grid">
+            <input type="text" name="name"
+                   placeholder="Dish name" required maxlength="100">
+
+            <input type="text" name="description"
+                   placeholder="Dish description" maxlength="250">
+
+            <input type="number" name="price"
+                   placeholder="Price (₹)" min="0" step="0.01" required>
+
+            <button type="submit">Add Dish</button>
+        </form>
+    </section>
+
+    <!-- READ and UPDATE/DELETE: Menu -->
+    <section class="panel">
+        <h2>🍕 Food Menu</h2>
+
+        <div class="menu-grid">
+            {% for food in foods %}
+            <article class="food-card">
+                <div class="food-icon">🍴</div>
+                <h3>{{ food.name }}</h3>
+                <p>{{ food.description or 'Freshly prepared for you.' }}</p>
+                <div class="price">₹{{ "%.2f"|format(food.price) }}</div>
+
+                <details>
+                    <summary>Edit dish details</summary>
+                    <form action="{{ url_for('update_food', food_id=food.id) }}"
+                          method="POST" class="edit-form">
+                        <label>Dish name</label>
+                        <input name="name" value="{{ food.name }}" required
+                               maxlength="100">
+
+                        <label>Description</label>
+                        <input name="description"
+                               value="{{ food.description or '' }}"
+                               maxlength="250">
+
+                        <label>Price (₹)</label>
+                        <input type="number" name="price"
+                               value="{{ food.price }}" min="0"
+                               step="0.01" required>
+
+                        <button type="submit">Save Changes</button>
+                    </form>
+                </details>
+
+                <form action="{{ url_for('delete_food', food_id=food.id) }}"
+                      method="POST"
+                      onsubmit="return confirm('Delete this dish?');">
+                    <button type="submit" class="danger">Delete Dish</button>
+                </form>
+            </article>
+            {% else %}
+            <p class="empty">No dishes yet. Add your first dish above!</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- CREATE: Customer order -->
+    <section class="panel">
+        <h2>🛒 Place a Customer Order</h2>
+
+        {% if foods %}
+        <form action="{{ url_for('place_order') }}" method="POST"
+              class="form-grid">
+            <input type="text" name="customer"
+                   placeholder="Customer name" required maxlength="100">
+
+            <select name="food_id" required>
+                <option value="">Choose a dish</option>
+                {% for food in foods %}
+                <option value="{{ food.id }}">
+                    {{ food.name }} — ₹{{ "%.2f"|format(food.price) }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <input type="number" name="quantity"
+                   min="1" value="1" required>
+
+            <button type="submit">Place Order</button>
+        </form>
+        {% else %}
+        <p>Add a dish to the menu before placing an order.</p>
+        {% endif %}
+    </section>
+
+    <!-- READ and UPDATE: Customer orders -->
+    <section class="panel">
+        <h2>📋 Customer Orders</h2>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Dish</th>
+                        <th>Quantity</th>
+                        <th>Status</th>
+                        <th>Update Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.customer }}</td>
+                        <td>{{ order.food_name or 'Dish removed' }}</td>
+                        <td>{{ order.quantity }}</td>
+                        <td><span class="status">{{ order.status }}</span></td>
+                        <td>
+                            <form
+                                action="{{ url_for('update_order_status', order_id=order.id) }}"
+                                method="POST" class="status-form">
+                                <select name="status">
+                                    {% for status in
+                                    ['Pending', 'Preparing', 'Delivered', 'Cancelled'] %}
+                                    <option value="{{ status }}"
+                                        {% if order.status == status %}
+                                        selected
+                                        {% endif %}>
+                                        {{ status }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit">Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="empty">No customer orders yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <p>FoodieHub · Online Food Ordering System</p>
+    <p>Built with Flask, Python and SQLite</p>
+</footer>
+
+</body>
+</html>
